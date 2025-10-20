@@ -42,15 +42,12 @@ export function analyzeColumns(rows, targetName='price') {
   return { numCols, catCols, catMaps };
 }
 
-function robustStats(arr) {
-    const s = [...arr].sort((a,b)=>a-b);
-    const mid = Math.floor(s.length/2);
-    const median = s.length%2 ? s[mid] : (s[mid-1]+s[mid])/2;
-    const absDev = s.map(x=> Math.abs(x - median)).sort((a,b)=>a-b);
-    const mad = absDev.length%2 ? absDev[mid] : (absDev[mid-1]+absDev[mid])/2;
-    const scale = (1.4826 * mad) || 1;
-    return {median, scale};
-  }
+function zScore(arr) {
+  const m = arr.reduce((a,b)=>a+b,0)/arr.length;
+  const v = arr.reduce((a,b)=>a + (b-m)*(b-m),0)/arr.length;
+  const s = Math.sqrt(v) || 1;
+  return {mean: m, std: s};
+}
 
 export function buildTabularTensors(rows, schema, trainFrac=0.8) {
   const numeric = rows.map(r=> schema.numCols.map(h=> isNumeric(r[h]) ? Number(r[h]) : NaN ));
@@ -68,8 +65,8 @@ export function buildTabularTensors(rows, schema, trainFrac=0.8) {
   const trIdx = idx.slice(0,split), teIdx = idx.slice(split);
 
   const trainNum = trIdx.map(i=> Xnum[i]);
-  const stats = schema.numCols.map((_,j)=> robustStats(trainNum.map(r=> r[j])));
-  const XnumScaled = Xnum.map(row => row.map((x,j)=> (x - stats[j].median) / stats[j].scale ));
+  const stats = schema.numCols.map((_,j)=> zScore(trainNum.map(r=> r[j])));
+  const XnumScaled = Xnum.map(row => row.map((x,j)=> (x - stats[j].mean) / stats[j].std ));
 
   const Xcats = schema.catCols.map(h => rows.map(r=> {
     const v = (r[h] && r[h] !== '?') ? r[h] : '__NA__';
