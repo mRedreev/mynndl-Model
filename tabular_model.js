@@ -11,7 +11,7 @@ export function buildTabularModel(schema) {
 
   for (const h of schema.catCols) {
     const size = schema.catMaps[h].size;
-    const dim = Math.min(50, Math.ceil(Math.sqrt(size))+1);
+    const dim = Math.min(32, Math.ceil(Math.sqrt(size))+2);
     const inp = tf.input({shape: [1], dtype:'int32', name: `cat_${h}`});
     inputs.push(inp);
     const emb = tf.layers.embedding({inputDim: size, outputDim: dim}).apply(inp); // output [batch, 1, dim]
