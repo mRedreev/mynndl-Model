@@ -76,13 +76,7 @@ export function buildTabularTensors(rows, schema, trainFrac=0.8) {
     return schema.catMaps[h].map[v] ?? 0;
   }));
 
-  const pricesRaw = rows.map(r => isNumeric(r['price']) ? Number(r['price']) : NaN);
-  const validIdxAll = pricesRaw.map((v,i)=> Number.isFinite(v) ? i : -1).filter(i=> i>=0);
-  const trainPrices = trIdx.filter(i=> validIdxAll.includes(i)).map(i=> pricesRaw[i]);
-  function quantile(a, q){ const s=[...a].sort((x,y)=>x-y); const p=(s.length-1)*q; const k=Math.floor(p); const d=p-k; return s[k]+d*(s[k+1]??s[k]); }
-  const p01 = quantile(trainPrices, 0.01), p99 = quantile(trainPrices, 0.99);
-  function clip(v, lo, hi){ return Math.min(hi, Math.max(lo, v)); }
-  const y = pricesRaw.map(v => Number.isFinite(v) ? Math.log1p(clip(v, p01, p99)) : NaN);
+  const y = rows.map(r=> isNumeric(r['price']) ? Math.log1p(Number(r['price'])) : NaN );
   const validIdx = y.map((v,i)=> Number.isFinite(v) ? i : -1).filter(i=> i>=0);
 
   function pick(indexes, arr){ return indexes.map(i=> arr[i]); }
