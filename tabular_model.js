@@ -22,10 +22,10 @@ export function buildTabularModel(schema) {
   const concat = tf.layers.concatenate().apply(parts);
   let x = tf.layers.dense({units: 256, activation:'relu', kernelRegularizer: tf.regularizers.l2({l2:1e-5})}).apply(concat);
   x = tf.layers.batchNormalization().apply(x);
-  x = tf.layers.dropout({rate:0.15}).apply(x);
+  x = tf.layers.dropout({rate:0.3}).apply(x);
   x = tf.layers.dense({units: 128, activation:'relu'}).apply(x);
   x = tf.layers.batchNormalization().apply(x);
-  x = tf.layers.dropout({rate:0.15}).apply(x);
+  x = tf.layers.dropout({rate:0.3}).apply(x);
   x = tf.layers.dense({units: 64, activation:'relu'}).apply(x);
   const out = tf.layers.dense({units:1, activation:'linear'}).apply(x);
 
