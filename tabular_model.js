@@ -13,10 +13,10 @@ export function buildTabularModel(schema) {
     const size = schema.catMaps[h].size;
     const dim = Math.min(50, Math.ceil(Math.sqrt(size))+1);
     const inp = tf.input({shape: [1], dtype:'int32', name: `cat_${h}`});
-inputs.push(inp);
-const emb = tf.layers.embedding({inputDim: size, outputDim: dim}).apply(inp);
-const flat = tf.layers.flatten().apply(emb); 
-parts.push(flat);
+    inputs.push(inp);
+    const emb = tf.layers.embedding({inputDim: size, outputDim: dim}).apply(inp);
+    const flat = tf.layers.flatten().apply(emb); 
+    parts.push(flat);
   }
 
   const concat = tf.layers.concatenate().apply(parts);
