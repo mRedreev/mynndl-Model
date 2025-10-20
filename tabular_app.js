@@ -44,6 +44,17 @@ trainBtn.addEventListener('click', async ()=> {
     onEpoch: (ep, logs)=> {
       progressEl.value = (ep+1)/st.epochs;
       epochText.textContent = `Epoch ${ep+1}/${st.epochs} — loss ${logs.loss.toFixed(4)} — val_loss ${logs.val_loss?.toFixed(4) ?? '-'} — MAE ${logs.mae.toFixed(2)}`;
+      const lrKey = '__bestVal'; st.__state ??= { best: Infinity, since: 0 };
+      if (logs.val_loss != null) {
+        if (logs.val_loss + 1e-6 < st.__state.best) { st.__state.best = logs.val_loss; st.__state.since = 0; }
+        else { st.__state.since++; }
+        if (st.__state.since === 8) {
+          const opt = st.model.optimizer;
+          const lr = (await opt.getConfig()).learningRate ?? 0.001;
+          opt.learningRate = lr * 0.5;
+        }
+        if (st.__state.since > 20) { this.stopTraining = true; }
+      }
     }
   });
   statusEl.textContent = 'Trained.';
