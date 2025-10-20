@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>TF.js GRU/MLP — Регрессия цены авто (cars.csv)</title>
+  <title>TF.js GRU + MLP — Car Price Regression</title>
   <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -11,75 +11,83 @@
   <style>
     :root { --bg:#0b1020; --card:#111833; --muted:#aab2d5; --text:#e7ecff; --accent:#6aa3ff; --good:#2ecc71; --bad:#e74c3c; }
     * { box-sizing: border-box; }
+    html,body { height:100%; }
     body { margin:0; font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: var(--bg); color: var(--text); }
-    header { padding: 28px 20px; text-align:center; border-bottom: 1px solid #1a2247; }
-    header h1 { margin: 0 0 6px; font-size: 22px; }
-    header p { margin: 0; color: var(--muted); }
-    main { max-width: 1060px; margin: 0 auto; padding: 22px; display: grid; grid-template-columns: 340px 1fr; gap: 18px; }
-    .panel { background: var(--card); border: 1px solid #1a2247; border-radius: 16px; padding: 16px; }
-    .panel h2 { font-size: 16px; margin: 0 0 12px; }
+    header { padding: 34px 20px 22px; text-align:center; border-bottom: 1px solid #1a2247; }
+    header h1 { margin: 0 0 8px; font-size: 24px; letter-spacing: 0.2px; }
+    header p { margin: 0 auto; color: var(--muted); max-width: 900px; line-height: 1.4; font-size: 14px; }
+    main { max-width: 1120px; margin: 0 auto; padding: 24px; display: grid; grid-template-columns: 360px 1fr; gap: 20px; }
+    .panel { background: var(--card); border: 1px solid #1a2247; border-radius: 18px; padding: 18px; }
+    .panel h2 { font-size: 16px; margin: 0 0 12px; letter-spacing: 0.2px; }
     .row { display:flex; align-items:center; gap:12px; margin: 10px 0; }
     .muted { color: var(--muted); font-size: 13px; }
-    label.button { display:inline-block; background: #1a254d; padding: 10px 12px; border-radius: 10px; cursor: pointer; }
+    label.button { display:inline-block; background: #1a254d; padding: 10px 12px; border-radius: 12px; cursor: pointer; font-weight:600; }
     label.button:hover { background: #203061; }
     input[type=file] { display:none; }
-    button.primary { background: var(--accent); color: #04112b; border: none; border-radius: 10px; padding: 10px 14px; font-weight: 700; cursor: pointer; }
+    button.primary { background: var(--accent); color: #04112b; border: none; border-radius: 12px; padding: 10px 14px; font-weight: 700; cursor: pointer; }
     button.primary:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-row { display:flex; gap:10px; flex-wrap:wrap; }
     progress { width: 100%; height: 10px; }
     .grid2 { display:grid; grid-template-columns: 1fr 1fr; gap:16px; }
-    canvas { width: 100%; height: 260px; background:#0f1430; border:1px solid #1a2247; border-radius: 10px; }
+    canvas { width: 100%; height: 260px; background:#0f1430; border:1px solid #1a2247; border-radius: 12px; }
     code { background:#0f1530; padding:2px 6px; border-radius:6px; }
     table { width:100%; border-collapse: collapse; font-size: 13px; }
-    th, td { padding: 6px 8px; border-bottom: 1px solid #1a2247; text-align: right; }
+    th, td { padding: 8px 10px; border-bottom: 1px solid #1a2247; text-align: right; }
     th:first-child, td:first-child { text-align: left; }
+    .footnote { margin-top: 6px; font-size: 12px; color: var(--muted); }
   </style>
 </head>
 <body>
   <header>
-    <h1>GRU + MLP (TF.js) — Регрессия цены автомобиля</h1>
-    <p>Файл вида <code>cars_prepared.csv</code>: целевая колонка <code>price</code>. Признаки автоматически кодируются (one-hot/масштабирование). Loss: MSE.</p>
+    <h1>GRU + MLP (TF.js) — Car Price Regression</h1>
+    <p>
+      Use a CSV like <code>cars_prepared.csv</code>. The target column is <code>price</code>.
+      Numeric features are min–max scaled; categorical features are one‑hot encoded.
+      Model: GRU(64,64) → Dense(64, ReLU) → Dense(1). Optimizer: Adam(0.001). Loss: MSE.
+    </p>
   </header>
   <main>
     <section class="panel">
-      <h2>1) Загрузка данных</h2>
+      <h2>1) Load Data</h2>
       <div class="row">
         <label class="button">
           <input id="fileInput" type="file" accept=".csv"/>
-          Выбрать CSV
+          Choose CSV
         </label>
-        <span id="fileName" class="muted">Файл не выбран</span>
+        <span id="fileName" class="muted">No file selected</span>
       </div>
-      <p class="muted">Поддерживаются разделители <code>,</code> и <code>;</code>. Пустые и <code>?</code> значения игнорируются.</p>
-      <div class="row"><span id="status" class="muted">Жду файл…</span></div>
-      <h2>2) Обучение</h2>
-      <div class="row">
-        <button id="trainBtn" class="primary" disabled>Обучить</button>
-        <button id="evalBtn" class="primary" disabled>Оценить</button>
+      <p class="muted">Delimiters <code>,</code> and <code>;</code> are supported. Empty values or <code>?</code> are ignored.</p>
+      <div class="row"><span id="status" class="muted">Waiting for file…</span></div>
+      <h2>2) Train</h2>
+      <div class="btn-row">
+        <button id="trainBtn" class="primary" disabled>Train</button>
+        <button id="evalBtn" class="primary" disabled>Evaluate</button>
+        <button id="saveBtn" class="primary" disabled>Save Weights</button>
+        <button id="loadBtn" class="primary">Load Weights</button>
       </div>
       <div class="row" style="align-items:flex-start">
         <div style="flex:1">
-          <div class="muted" style="font-size:12px">Прогресс</div>
+          <div class="muted" style="font-size:12px">Progress</div>
           <progress id="progress" value="0" max="1"></progress>
         </div>
         <div id="epochText" class="muted" style="font-size:12px"></div>
       </div>
-      <div class="row"><button id="saveBtn" class="primary" disabled>Сохранить веса</button><button id="loadBtn" class="primary">Загрузить веса</button></div>
-      <p class="muted">Модель: GRU(64,64) → Dense(64, ReLU) → Dense(1). Вход — «псевдопоследовательность» из признаков.</p>
+      <p class="footnote">Input is a “pseudo‑sequence” of the tabular features chunked across 4 time steps.</p>
     </section>
     <section class="panel">
-      <h2>Результаты</h2>
-      <div id="summary" class="muted" style="font-size:12px">Пока пусто.</div>
+      <h2>Results</h2>
+      <div id="summary" class="muted" style="font-size:12px">No results yet.</div>
       <div class="grid2" style="margin-top:12px">
         <div>
-          <h3 style="margin:6px 0 8px">Метрики</h3>
+          <h3 style="margin:6px 0 8px">Metrics</h3>
           <table id="metricsTbl">
-            <thead><tr><th>Набор</th><th>MAE</th><th>RMSE</th><th>R²</th></tr></thead>
+            <thead><tr><th>Split</th><th>MAE</th><th>RMSE</th><th>R²</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
         <div>
-          <h3 style="margin:6px 0 8px">Факт vs Прогноз</h3>
-          <canvas id="scatter"></canvas>
+          <h3 style="margin:6px 0 8px">Actual vs Predicted</h3>
+          <canvas id="scatter" aria-label="Scatter plot of actual vs predicted prices"></canvas>
         </div>
       </div>
     </section>
