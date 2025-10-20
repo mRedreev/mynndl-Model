@@ -11,22 +11,22 @@ export function buildTabularModel(schema) {
 
   for (const h of schema.catCols) {
     const size = schema.catMaps[h].size;
-    const dim = Math.min(50, Math.ceil(Math.sqrt(size))+1);
+    const dim = Math.min(64, Math.ceil(Math.sqrt(size))*2);
     const inp = tf.input({shape: [1], dtype:'int32', name: `cat_${h}`});
     inputs.push(inp);
     const emb = tf.layers.embedding({inputDim: size, outputDim: dim}).apply(inp);
-    const flat = tf.layers.flatten().apply(emb); 
+    const flat = tf.layers.dropout({rate:0.1}).apply(tf.layers.flatten().apply(emb));
     parts.push(flat);
   }
 
   const concat = tf.layers.concatenate().apply(parts);
-  let x = tf.layers.dense({units: 256, activation:'relu', kernelRegularizer: tf.regularizers.l2({l2:1e-5})}).apply(concat);
+  let x = tf.layers.dense({units: 512, activation:'elu', kernelRegularizer: tf.regularizers.l2({l2:1e-5})}).apply(concat);
   x = tf.layers.batchNormalization().apply(x);
-  x = tf.layers.dropout({rate:0.15}).apply(x);
-  x = tf.layers.dense({units: 128, activation:'relu'}).apply(x);
+  x = tf.layers.dropout({rate:0.2}).apply(x);
+  x = tf.layers.dense({units: 256, activation:'elu'}).apply(x);
   x = tf.layers.batchNormalization().apply(x);
-  x = tf.layers.dropout({rate:0.15}).apply(x);
-  x = tf.layers.dense({units: 64, activation:'relu'}).apply(x);
+  x = tf.layers.dropout({rate:0.2}).apply(x);
+  x = tf.layers.dense({units: 128, activation:'elu'}).apply(x);
   const out = tf.layers.dense({units:1, activation:'linear'}).apply(x);
 
   const model = tf.model({inputs, outputs: out});
