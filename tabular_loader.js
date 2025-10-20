@@ -96,8 +96,8 @@ export function buildTabularTensors(rows, schema, trainFrac=0.8) {
   const XnumTestT  = tf.tensor2d(XnumTest);
   const yTrainT = tf.tensor2d(yTrain, [yTrain.length, 1]);
   const yTestT  = tf.tensor2d(yTest,  [yTest.length, 1]);
-  const XcatsTrainT = XcatsTrain.map(col => tf.tensor1d(col, 'int32'));
-  const XcatsTestT  = XcatsTest.map(col => tf.tensor1d(col, 'int32'));
+  const XcatsTrainT = XcatsTrain.map(col => tf.tensor2d(col, [col.length, 1], 'int32'));
+  const XcatsTestT  = XcatsTest.map(col => tf.tensor2d(col, [col.length, 1], 'int32'));
 
   return {
     Xtrain: [XnumTrainT, ...XcatsTrainT],
