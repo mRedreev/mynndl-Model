@@ -11,7 +11,7 @@ export function buildTabularModel(schema) {
 
   for (const h of schema.catCols) {
     const size = schema.catMaps[h].size;
-    const dim = Math.min(32, Math.ceil(Math.sqrt(size))+2);
+    const dim = Math.min(32, Math.ceil(Math.sqrt(size))+1);
     const inp = tf.input({shape: [1], dtype:'int32', name: `cat_${h}`});
     inputs.push(inp);
     const emb = tf.layers.embedding({inputDim: size, outputDim: dim}).apply(inp); // output [batch, 1, dim]
@@ -34,7 +34,7 @@ export function buildTabularModel(schema) {
   return model;
 }
 
-export async function fitModel(model, tensors, {epochs=400, batchSize=64, validationSplit=0.15, onEpoch}={}) {
+export async function fitModel(model, tensors, {epochs=250, batchSize=64, validationSplit=0.15, onEpoch}={}) {
   return await model.fit(tensors.Xtrain, tensors.ytrain, {
     epochs, batchSize, shuffle:true, validationSplit,
     callbacks: { onEpochEnd: async (ep, logs)=> onEpoch && onEpoch(ep, logs) }
