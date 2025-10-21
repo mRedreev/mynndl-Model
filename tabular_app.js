@@ -2,7 +2,7 @@
 import { parseCarsCSV, analyzeColumns, buildTabularTensors } from './tabular_loader.js';
 import { buildTabularModel, fitModel, evaluate } from './tabular_model.js';
 
-const st = { model: null, schema: null, tensors: null, batch: 64, epochs: 400 };
+const st = { model: null, schema: null, tensors: null, batch: 64, epochs: 250 };
 
 const fileInput = document.getElementById('fileInput');
 const fileName = document.getElementById('fileName');
