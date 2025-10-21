@@ -34,7 +34,7 @@ export function buildTabularModel(schema) {
   return model;
 }
 
-export async function fitModel(model, tensors, {epochs=52, batchSize=256, validationSplit=0.15, onEpoch}={}) {
+export async function fitModel(model, tensors, {epochs=100, batchSize=256, validationSplit=0.15, onEpoch}={}) {
   return await model.fit(tensors.Xtrain, tensors.ytrain, {
     epochs, batchSize, shuffle:true, validationSplit,
     callbacks: { onEpochEnd: async (ep, logs)=> onEpoch && onEpoch(ep, logs) }
