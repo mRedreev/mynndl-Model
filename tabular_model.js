@@ -11,22 +11,22 @@ export function buildTabularModel(schema) {
 
   for (const h of schema.catCols) {
     const size = schema.catMaps[h].size;
-    const dim = Math.min(32, Math.ceil(Math.sqrt(size))+1);
+    const dim = Math.min(50, Math.ceil(Math.sqrt(size))+1);
     const inp = tf.input({shape: [1], dtype:'int32', name: `cat_${h}`});
     inputs.push(inp);
-    const emb = tf.layers.embedding({inputDim: size, outputDim: dim}).apply(inp); // output [batch, 1, dim]
-    const flat = tf.layers.flatten().apply(emb); // becomes [batch, dim]
+    const emb = tf.layers.embedding({inputDim: size, outputDim: dim}).apply(inp); 
+    const flat = tf.layers.flatten().apply(emb); 
     parts.push(flat);
   }
 
   const concat = tf.layers.concatenate().apply(parts);
-  let x = tf.layers.dense({units: 256, activation:'elu', kernelRegularizer: tf.regularizers.l2({l2:1e-5})}).apply(concat);
+  let x = tf.layers.dense({units: 256, activation:'relu', kernelRegularizer: tf.regularizers.l2({l2:1e-5})}).apply(concat);
   x = tf.layers.batchNormalization().apply(x);
-  x = tf.layers.dropout({rate:0.3}).apply(x);
-  x = tf.layers.dense({units: 128, activation:'elu'}).apply(x);
+  x = tf.layers.dropout({rate:0.15}).apply(x);
+  x = tf.layers.dense({units: 128, activation:'relu'}).apply(x);
   x = tf.layers.batchNormalization().apply(x);
-  x = tf.layers.dropout({rate:0.3}).apply(x);
-  x = tf.layers.dense({units: 64, activation:'elu'}).apply(x);
+  x = tf.layers.dropout({rate:0.15}).apply(x);
+  x = tf.layers.dense({units: 64, activation:'relu'}).apply(x);
   const out = tf.layers.dense({units:1, activation:'linear'}).apply(x);
 
   const model = tf.model({inputs, outputs: out});
@@ -34,7 +34,7 @@ export function buildTabularModel(schema) {
   return model;
 }
 
-export async function fitModel(model, tensors, {epochs=100, batchSize=256, validationSplit=0.15, onEpoch}={}) {
+export async function fitModel(model, tensors, {epochs=200, batchSize=32, validationSplit=0.15, onEpoch}={}) {
   return await model.fit(tensors.Xtrain, tensors.ytrain, {
     epochs, batchSize, shuffle:true, validationSplit,
     callbacks: { onEpochEnd: async (ep, logs)=> onEpoch && onEpoch(ep, logs) }
